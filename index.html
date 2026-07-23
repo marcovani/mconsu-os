@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>MCONSU · Ordens de Serviço</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="theme-color" content="#143229">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  :root{
+    --paper:#F7F5F0;
+    --ink:#1B1F23;
+    --ink-soft:#5B6168;
+    --line:#D9D4C8;
+    --green:#1F4D3D;
+    --green-deep:#143229;
+    --amber:#B9802E;
+    --red:#9B3B33;
+    --mono:'Courier New',monospace;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:Georgia,'Times New Roman',serif;-webkit-font-smoothing:antialiased;}
+  .sans{font-family:-apple-system,Helvetica,Arial,sans-serif;}
+  header.app{background:var(--green-deep);color:#fff;padding:18px 16px 14px;position:sticky;top:0;z-index:10;border-bottom:3px solid var(--amber);}
+  header.app .brand{font-size:13px;letter-spacing:.12em;text-transform:uppercase;opacity:.75;font-family:Helvetica,Arial,sans-serif;}
+  header.app h1{margin:2px 0 0;font-size:20px;font-weight:normal;letter-spacing:.01em;}
+  nav.tabs{display:flex;background:#fff;border-bottom:1px solid var(--line);position:sticky;top:64px;z-index:9;font-family:Helvetica,Arial,sans-serif;}
+  nav.tabs button{flex:1;padding:12px 4px;background:none;border:none;font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-soft);cursor:pointer;border-bottom:3px solid transparent;}
+  nav.tabs button.active{color:var(--green-deep);border-bottom-color:var(--amber);font-weight:bold;}
+  main{padding:16px;max-width:520px;margin:0 auto;padding-bottom:60px;}
+  .card{background:#fff;border:1px solid var(--line);border-radius:2px;padding:18px;margin-bottom:14px;position:relative;}
+  .card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--green);}
+  .card-title{font-family:Helvetica,Arial,sans-serif;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-soft);margin-bottom:12px;}
+  label{display:block;font-family:Helvetica,Arial,sans-serif;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-soft);margin:14px 0 5px;}
+  label:first-child{margin-top:0;}
+  input,select{width:100%;padding:11px 10px;border:1px solid var(--line);border-radius:2px;font-size:16px;font-family:var(--mono);background:#FCFBF8;color:var(--ink);}
+  input:focus,select:focus{outline:none;border-color:var(--green);}
+  input[readonly]{background:#F0EEE7;color:var(--ink-soft);}
+  .input-row{display:flex;gap:8px;}
+  .input-row > div{flex:1;}
+  .btn{display:block;width:100%;padding:14px;border:none;border-radius:2px;font-family:Helvetica,Arial,sans-serif;font-size:14px;letter-spacing:.04em;text-transform:uppercase;font-weight:bold;cursor:pointer;margin-top:18px;}
+  .btn-primary{background:var(--green);color:#fff;}
+  .btn-amber{background:var(--amber);color:#fff;}
+  .btn-outline{background:none;border:1px solid var(--ink-soft);color:var(--ink);margin-top:8px;}
+  .btn-wa{background:#1d6b4d;color:#fff;}
+  .btn-add{width:auto;margin-top:8px;font-size:11px;padding:7px 14px;background:#fff;border:1px dashed var(--amber);color:var(--amber);border-radius:2px;font-family:Helvetica,Arial,sans-serif;letter-spacing:.04em;cursor:pointer;}
+  .os-ticket{background:#fff;border:1px solid var(--line);padding:16px;background-image:repeating-linear-gradient(transparent,transparent 27px,var(--line) 28px);}
+  .os-ticket .eyebrow{font-family:Helvetica,Arial,sans-serif;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-soft);}
+  .os-ticket h2{margin:2px 0 10px;font-size:16px;border-bottom:1px solid var(--ink);padding-bottom:8px;}
+  .row{display:flex;justify-content:space-between;gap:10px;font-size:14px;margin:5px 0;font-family:var(--mono);}
+  .row .k{color:var(--ink-soft);font-family:Helvetica,Arial,sans-serif;font-size:12px;white-space:nowrap;}
+  .row .v{text-align:right;}
+  .stamp{display:inline-block;font-family:Helvetica,Arial,sans-serif;font-weight:bold;font-size:11px;letter-spacing:.08em;text-transform:uppercase;padding:4px 10px;border-radius:20px;color:#fff;}
+  .stamp.andamento{background:var(--amber);}
+  .stamp.concluida{background:var(--green);}
+  .empty{text-align:center;padding:40px 20px;color:var(--ink-soft);font-family:Helvetica,Arial,sans-serif;font-size:13px;}
+  .dash-num{font-size:34px;font-family:Helvetica,Arial,sans-serif;font-weight:bold;color:var(--green-deep);}
+  .dash-label{font-family:Helvetica,Arial,sans-serif;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-soft);}
+  .footer-note{font-family:Helvetica,Arial,sans-serif;font-size:10px;color:var(--ink-soft);text-align:center;margin-top:20px;}
+  .mot-bloco{border-top:1px solid var(--line);padding-top:14px;margin-top:14px;}
+  .mot-bloco:first-child{border-top:none;padding-top:0;margin-top:0;}
+  .parada-row{display:flex;gap:6px;align-items:center;margin-top:8px;}
+  .parada-row input{flex:1;}
+  .parada-row button{background:none;border:none;color:var(--ink-soft);font-size:20px;cursor:pointer;padding:4px 8px;line-height:1;flex-shrink:0;}
+  .section-hr{border:none;border-top:1px solid var(--line);margin:10px 0;}
+</style>
+</head>
+<body>
+
+<header class="app">
+  <div class="brand" id="header-brand">CONFIGURE SUA EMPRESA</div>
+  <h1>Ordens de Serviço · Transporte</h1>
+</header>
+
+<nav class="tabs">
+  <button class="active" data-tab="nova">Nova OS</button>
+  <button data-tab="andamento">Andamento</button>
+  <button data-tab="concluidas">Concluídas</button>
+  <button data-tab="dash">Painel</button>
+  <button data-tab="config">⚙</button>
+</nav>
+
+<main>
+
+  <!-- ABA: NOVA OS -->
+  <section id="tab-nova">
+    <div class="card">
+      <div class="card-title">Passageiro</div>
+
+      <label>Nome completo</label>
+      <input id="f-nome" class="sans" placeholder="Ex: João da Silva">
+
+      <label>CPF</label>
+      <input id="f-cpf" inputmode="numeric" placeholder="000.000.000-00">
+    </div>
+
+    <div class="card">
+      <div class="card-title">Trajeto</div>
+
+      <label>Origem</label>
+      <input id="f-origem" class="sans" placeholder="Ex: Av. Brasil, 100 - Betim/MG">
+
+      <div id="f-paradas-list"></div>
+      <button type="button" class="btn-add" id="btn-add-parada" onclick="adicionarParada()">+ Adicionar parada intermediária</button>
+
+      <label>Destino</label>
+      <input id="f-destino" class="sans" placeholder="Ex: Aeroporto Confins/MG">
+
+      <div class="input-row" style="margin-top:14px;">
+        <div>
+          <label style="margin-top:0;">Embarque previsto</label>
+          <input id="f-embarque" type="datetime-local">
+        </div>
+        <div>
+          <label style="margin-top:0;">Desembarque previsto</label>
+          <input id="f-desembarque" type="datetime-local">
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Serviço e Pagamento</div>
+
+      <label>Valor acordado (R$)</label>
+      <input id="f-valor" inputmode="decimal" placeholder="Ex: 250,00">
+    </div>
+
+    <div class="card">
+      <div class="card-title">Veículo e Motorista</div>
+
+      <label>Motorista responsável</label>
+      <select id="f-motorista-id" class="sans" onchange="preencherMotoristaSelecionado()"></select>
+
+      <div class="input-row" style="margin-top:14px;">
+        <div>
+          <label style="margin-top:0;">CPF do motorista</label>
+          <input id="f-motorista-cpf" placeholder="—" readonly>
+        </div>
+        <div>
+          <label style="margin-top:0;">Placa</label>
+          <input id="f-placa" placeholder="—" readonly style="text-transform:uppercase;">
+        </div>
+      </div>
+    </div>
+
+    <button class="btn btn-primary" onclick="abrirOS()">Abrir Ordem de Serviço</button>
+  </section>
+
+  <!-- ABA: EM ANDAMENTO -->
+  <section id="tab-andamento" style="display:none;"></section>
+
+  <!-- ABA: CONCLUÍDAS -->
+  <section id="tab-concluidas" style="display:none;"></section>
+
+  <!-- ABA: DASHBOARD -->
+  <section id="tab-dash" style="display:none;"></section>
+
+  <!-- ABA: CONFIGURAÇÕES -->
+  <section id="tab-config" style="display:none;">
+    <div class="card">
+      <div class="card-title">Dados da empresa emissora</div>
+      <label>Razão Social</label>
+      <input id="cfg-razao" class="sans" placeholder="Ex: Sua Empresa LTDA">
+      <label>CNPJ</label>
+      <input id="cfg-cnpj" placeholder="00.000.000/0001-00">
+      <label>Cidade/UF (sede)</label>
+      <input id="cfg-sede" class="sans" placeholder="Ex: Belo Horizonte - MG">
+      <label>CNAE / Atividade</label>
+      <input id="cfg-cnae" class="sans" placeholder="Ex: 49.23-0-02 - Locação de automóveis com motorista">
+      <label>Limite de alerta do faturamento mensal (R$)</label>
+      <input id="cfg-limite" inputmode="decimal" placeholder="Ex: 5000,00">
+      <button class="btn btn-primary" onclick="salvarConfigEmpresa()">Salvar dados da empresa</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Motoristas cadastrados (até 3)</div>
+      <div id="motoristas-form"></div>
+      <button class="btn btn-primary" style="margin-top:14px;" onclick="salvarMotoristas()">Salvar motoristas</button>
+    </div>
+
+    <div class="footer-note">
+      Dados salvos localmente neste aparelho e usados em todas as OS e recibos.
+    </div>
+  </section>
+
+</main>
+
+<script>
+// ─────────────────────────────────────────────
+//  EMPRESA
+// ─────────────────────────────────────────────
+const EMPRESA_KEY = "mconsu_empresa_v1";
+const EMPRESA_PADRAO = {
+  razaoSocial:"MCONSU EMPREENDIMENTOS LTDA",
+  cnpj:"51.793.391/0001-80",
+  sede:"Betim - MG",
+  cnae:"49.23-0-02 - Locação de automóveis com motorista",
+  limiteAlerta:5000
+};
+
+function getEmpresa(){
+  try{
+    const s=JSON.parse(localStorage.getItem(EMPRESA_KEY));
+    if(s&&s.razaoSocial) return {...EMPRESA_PADRAO,...s};
+  }catch(e){}
+  return EMPRESA_PADRAO;
+}
+
+function salvarConfigEmpresa(){
+  const lim=document.getElementById('cfg-limite').value.replace(',','.').trim();
+  const d={
+    razaoSocial:document.getElementById('cfg-razao').value.trim()||EMPRESA_PADRAO.razaoSocial,
+    cnpj:document.getElementById('cfg-cnpj').value.trim()||EMPRESA_PADRAO.cnpj,
+    sede:document.getElementById('cfg-sede').value.trim()||EMPRESA_PADRAO.sede,
+    cnae:document.getElementById('cfg-cnae').value.trim()||EMPRESA_PADRAO.cnae,
+    limiteAlerta:lim&&!isNaN(parseFloat(lim))?parseFloat(lim):EMPRESA_PADRAO.limiteAlerta
+  };
+  localStorage.setItem(EMPRESA_KEY,JSON.stringify(d));
+  atualizarHeaderEmpresa();
+  alert('Dados da empresa salvos.');
+}
+
+function preencherFormConfig(){
+  const e=getEmpresa();
+  document.getElementById('cfg-razao').value=e.razaoSocial;
+  document.getElementById('cfg-cnpj').value=e.cnpj;
+  document.getElementById('cfg-sede').value=e.sede;
+  document.getElementById('cfg-cnae').value=e.cnae;
+  document.getElementById('cfg-limite').value=String(e.limiteAlerta).replace('.',',');
+}
+
+function atualizarHeaderEmpresa(){
+  document.getElementById('header-brand').textContent=getEmpresa().razaoSocial;
+}
+
+// ─────────────────────────────────────────────
+//  MOTORISTAS CADASTRADOS
+// ─────────────────────────────────────────────
+const MOTORISTAS_KEY="mconsu_motoristas_v1";
+const MAX_MOTORISTAS=3;
+
+function getMotoristas(){
+  try{
+    const s=JSON.parse(localStorage.getItem(MOTORISTAS_KEY));
+    if(Array.isArray(s)) return s;
+  }catch(e){}
+  return [];
+}
+
+function renderMotoristasForm(){
+  const atuais=getMotoristas();
+  let html='';
+  for(let i=0;i<MAX_MOTORISTAS;i++){
+    const m=atuais[i]||{nome:'',cpf:'',placa:''};
+    html+=`<div class="mot-bloco">
+      <label style="margin-top:0;">Nome do motorista ${i+1}</label>
+      <input id="mot-${i}-nome" class="sans" value="${m.nome}" placeholder="Ex: Carlos Eduardo Souza">
+      <label>CPF do motorista ${i+1}</label>
+      <input id="mot-${i}-cpf" value="${m.cpf}" placeholder="000.000.000-00" inputmode="numeric">
+      <label>Placa do veículo ${i+1}</label>
+      <input id="mot-${i}-placa" value="${m.placa}" placeholder="ABC1D23" style="text-transform:uppercase;">
+    </div>`;
+  }
+  document.getElementById('motoristas-form').innerHTML=html;
+  for(let i=0;i<MAX_MOTORISTAS;i++){
+    document.getElementById(`mot-${i}-cpf`).addEventListener('input',e=>{e.target.value=mascararCPF(e.target.value);});
+    document.getElementById(`mot-${i}-placa`).addEventListener('input',e=>{e.target.value=e.target.value.toUpperCase();});
+  }
+}
+
+function salvarMotoristas(){
+  const lista=[];
+  for(let i=0;i<MAX_MOTORISTAS;i++){
+    const nome=document.getElementById(`mot-${i}-nome`).value.trim();
+    const cpf=document.getElementById(`mot-${i}-cpf`).value.trim();
+    const placa=document.getElementById(`mot-${i}-placa`).value.trim().toUpperCase();
+    if(!nome&&!cpf&&!placa) continue;
+    if(!nome||!cpf||!placa){alert(`Preencha nome, CPF e placa do motorista ${i+1} ou deixe os três em branco.`);return;}
+    if(!validarCPF(cpf)){alert(`CPF inválido no motorista ${i+1}.`);return;}
+    if(!validarPlaca(placa)){alert(`Placa inválida no motorista ${i+1}. Use ABC1234 ou ABC1D23.`);return;}
+    lista.push({id:'mot'+i,nome,cpf,placa});
+  }
+  localStorage.setItem(MOTORISTAS_KEY,JSON.stringify(lista));
+  popularSelectMotoristas();
+  alert('Motoristas salvos.');
+}
+
+function popularSelectMotoristas(){
+  const sel=document.getElementById('f-motorista-id');
+  if(!sel) return;
+  const mots=getMotoristas();
+  sel.innerHTML=mots.length===0
+    ?'<option value="">Cadastre motoristas em ⚙ Configurações</option>'
+    :'<option value="">Selecione o motorista...</option>'+mots.map(m=>`<option value="${m.id}">${m.nome}</option>`).join('');
+  preencherMotoristaSelecionado();
+}
+
+function preencherMotoristaSelecionado(){
+  const sel=document.getElementById('f-motorista-id');
+  const m=getMotoristas().find(x=>x.id===sel.value);
+  document.getElementById('f-motorista-cpf').value=m?m.cpf:'';
+  document.getElementById('f-placa').value=m?m.placa:'';
+}
+
+// ─────────────────────────────────────────────
+//  VALIDAÇÕES
+// ─────────────────────────────────────────────
+function validarCPF(cpf){
+  cpf=cpf.replace(/\D/g,'');
+  if(cpf.length!==11||/^(\d)\1{10}$/.test(cpf)) return false;
+  let s=0;
+  for(let i=0;i<9;i++) s+=parseInt(cpf[i])*(10-i);
+  let r=(s*10)%11; if(r===10) r=0;
+  if(r!==parseInt(cpf[9])) return false;
+  s=0;
+  for(let i=0;i<10;i++) s+=parseInt(cpf[i])*(11-i);
+  r=(s*10)%11; if(r===10) r=0;
+  return r===parseInt(cpf[10]);
+}
+function mascararCPF(v){
+  return v.replace(/\D/g,'').slice(0,11)
+    .replace(/(\d{3})(\d)/,'$1.$2')
+    .replace(/(\d{3})(\d)/,'$1.$2')
+    .replace(/(\d{3})(\d{1,2})$/,'$1-$2');
+}
+function validarPlaca(p){
+  p=p.toUpperCase().replace(/[^A-Z0-9]/g,'');
+  return /^[A-Z]{3}\d{4}$/.test(p)||/^[A-Z]{3}\d[A-Z]\d{2}$/.test(p);
+}
+
+// Máscara CPF passageiro ao digitar
+document.getElementById('f-cpf').addEventListener('input',e=>{
+  e.target.value=mascararCPF(e.target.value);
+});
+
+// ─────────────────────────────────────────────
+//  PARADAS DINÂMICAS
+// ─────────────────────────────────────────────
+const MAX_PARADAS=5;
+
+function adicionarParada(){
+  const lista=document.getElementById('f-paradas-list');
+  const idx=lista.children.length;
+  if(idx>=MAX_PARADAS) return;
+  const div=document.createElement('div');
+  div.className='parada-row';
+  div.innerHTML=`
+    <input class="sans f-parada" placeholder="Parada ${idx+1} — Ex: Praça da Liberdade, BH/MG">
+    <button type="button" onclick="removerParada(this)" title="Remover parada">×</button>`;
+  lista.appendChild(div);
+  if(lista.children.length>=MAX_PARADAS)
+    document.getElementById('btn-add-parada').style.display='none';
+}
+
+function removerParada(btn){
+  btn.parentElement.remove();
+  document.getElementById('btn-add-parada').style.display='';
+  document.querySelectorAll('.f-parada').forEach((inp,i)=>{
+    inp.placeholder=`Parada ${i+1} — Ex: Praça da Liberdade, BH/MG`;
+  });
+}
+
+function getParadasForm(){
+  return Array.from(document.querySelectorAll('.f-parada')).map(i=>i.value.trim()).filter(Boolean);
+}
+function limparParadasForm(){
+  document.getElementById('f-paradas-list').innerHTML='';
+  document.getElementById('btn-add-parada').style.display='';
+}
+
+// ─────────────────────────────────────────────
+//  STORAGE DE VIAGENS
+// ─────────────────────────────────────────────
+const STORAGE_KEY="mconsu_viagens_v1";
+function getViagens(){try{return JSON.parse(localStorage.getItem(STORAGE_KEY))||[];}catch(e){return[];}}
+function saveViagens(v){localStorage.setItem(STORAGE_KEY,JSON.stringify(v));}
+
+function fmtMoeda(v){return Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function fmtData(iso){
+  if(!iso) return '-';
+  const d=new Date(iso);
+  return d.toLocaleDateString('pt-BR')+' às '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+}
+function fmtHorario(dtLocal){
+  // datetime-local vem como "2026-07-10T14:30"
+  if(!dtLocal) return null;
+  const [data,hora]=dtLocal.split('T');
+  const [ano,mes,dia]=data.split('-');
+  return `${dia}/${mes}/${ano} às ${hora}`;
+}
+
+// ─────────────────────────────────────────────
+//  BACKEND (GOOGLE SHEETS - opcional)
+// ─────────────────────────────────────────────
+async function enviarParaBackend(viagem){
+  const url=localStorage.getItem("mconsu_backend_url_v1")||"";
+  if(!url) return;
+  try{
+    await fetch(url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'upsert',viagem})});
+  }catch(e){}
+}
+
+// ─────────────────────────────────────────────
+//  TABS
+// ─────────────────────────────────────────────
+const tabs=document.querySelectorAll('nav.tabs button');
+tabs.forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    tabs.forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('main > section').forEach(s=>s.style.display='none');
+    document.getElementById('tab-'+btn.dataset.tab).style.display='block';
+    if(btn.dataset.tab==='config'){preencherFormConfig();renderMotoristasForm();}
+    if(btn.dataset.tab==='nova'){popularSelectMotoristas();}
+    render();
+  });
+});
+
+// ─────────────────────────────────────────────
+//  ABRIR OS
+// ─────────────────────────────────────────────
+function abrirOS(){
+  const nome=document.getElementById('f-nome').value.trim();
+  const cpf=document.getElementById('f-cpf').value.trim();
+  const origem=document.getElementById('f-origem').value.trim();
+  const destino=document.getElementById('f-destino').value.trim();
+  const valor=document.getElementById('f-valor').value.replace(',','.').trim();
+  const motId=document.getElementById('f-motorista-id').value;
+  const mot=getMotoristas().find(m=>m.id===motId);
+  const embarque=document.getElementById('f-embarque').value||null;
+  const desembarque=document.getElementById('f-desembarque').value||null;
+  const paradas=getParadasForm();
+
+  if(!nome||!cpf||!origem||!destino||!valor||!mot){
+    alert('Preencha todos os campos obrigatórios e selecione um motorista.');
+    return;
+  }
+  if(!validarCPF(cpf)){
+    alert('CPF do passageiro inválido. Confira o número digitado.');
+    document.getElementById('f-cpf').focus();
+    return;
+  }
+
+  const novaOS={
+    id:'OS-'+Date.now(),
+    passageiro:nome,
+    cpf,
+    origem,
+    paradas,
+    destino,
+    embarque,
+    desembarque,
+    valor:parseFloat(valor),
+    motorista:mot.nome,
+    motoristaCpf:mot.cpf,
+    placa:mot.placa,
+    status:'EM ANDAMENTO',
+    aberturaISO:new Date().toISOString(),
+    conclusaoISO:null,
+    formaPagamento:null
+  };
+
+  const viagens=getViagens();
+  viagens.unshift(novaOS);
+  saveViagens(viagens);
+  enviarParaBackend(novaOS);
+
+  ['f-nome','f-cpf','f-origem','f-destino','f-valor','f-embarque','f-desembarque']
+    .forEach(id=>document.getElementById(id).value='');
+  document.getElementById('f-motorista-id').value='';
+  preencherMotoristaSelecionado();
+  limparParadasForm();
+
+  document.querySelector('[data-tab="andamento"]').click();
+}
+
+// ─────────────────────────────────────────────
+//  RENDER TICKET (reutilizável)
+// ─────────────────────────────────────────────
+function rowHTML(k,v){return `<div class="row"><span class="k">${k}</span><span class="v">${v}</span></div>`;}
+
+function trajetoHTML(v){
+  let r=rowHTML('Origem',v.origem);
+  if(v.paradas&&v.paradas.length){
+    v.paradas.forEach((p,i)=>r+=rowHTML(`Parada ${i+1}`,p));
+  }
+  r+=rowHTML('Destino',v.destino);
+  return r;
+}
+
+function horariosHTML(v){
+  if(!v.embarque&&!v.desembarque) return '';
+  let r='<hr class="section-hr">';
+  if(v.embarque) r+=rowHTML('Embarque previsto',fmtHorario(v.embarque));
+  if(v.desembarque) r+=rowHTML('Desembarque previsto',fmtHorario(v.desembarque));
+  return r;
+}
+
+// ─────────────────────────────────────────────
+//  RENDER GERAL
+// ─────────────────────────────────────────────
+function render(){renderAndamento();renderConcluidas();renderDash();}
+
+function renderAndamento(){
+  const el=document.getElementById('tab-andamento');
+  const lista=getViagens().filter(v=>v.status==='EM ANDAMENTO');
+  if(lista.length===0){
+    el.innerHTML='<div class="empty">Nenhuma viagem em andamento.<br>Abra uma nova OS na primeira aba.</div>';
+    return;
+  }
+  el.innerHTML=lista.map(v=>`
+    <div class="os-ticket" style="margin-bottom:16px;">
+      <div class="eyebrow">Ordem de Serviço · Transporte Privado</div>
+      <h2>${getEmpresa().razaoSocial}</h2>
+      ${rowHTML('CNPJ',getEmpresa().cnpj)}
+      ${rowHTML('Sede',getEmpresa().sede)}
+      ${rowHTML('CNAE',getEmpresa().cnae)}
+      <hr class="section-hr">
+      ${rowHTML('OS Nº',v.id)}
+      ${rowHTML('Abertura',fmtData(v.aberturaISO))}
+      ${rowHTML('Status','<span class="stamp andamento">'+v.status+'</span>')}
+      <hr class="section-hr">
+      ${rowHTML('Passageiro',v.passageiro)}
+      ${rowHTML('CPF',v.cpf)}
+      <hr class="section-hr">
+      ${trajetoHTML(v)}
+      ${horariosHTML(v)}
+      <hr class="section-hr">
+      ${rowHTML('Valor acordado','R$ '+fmtMoeda(v.valor))}
+      <hr class="section-hr">
+      ${rowHTML('Motorista',v.motorista||'-')}
+      ${rowHTML('CPF Motorista',v.motoristaCpf||'-')}
+      ${rowHTML('Placa',v.placa||'-')}
+    </div>
+    <button class="btn btn-outline" onclick="gerarPdfOS('${v.id}')">Baixar PDF da OS</button>
+    <button class="btn btn-amber" onclick="abrirConclusao('${v.id}')">Concluir Viagem</button>
+    <div id="conclusao-${v.id}"></div>
+  `).join('<div style="height:24px;"></div>');
+}
+
+// ─────────────────────────────────────────────
+//  CONCLUSÃO
+// ─────────────────────────────────────────────
+function abrirConclusao(id){
+  const div=document.getElementById('conclusao-'+id);
+  if(div.innerHTML){div.innerHTML='';return;}
+  div.innerHTML=`
+    <div class="card" style="margin-top:10px;">
+      <label>Forma de pagamento</label>
+      <select id="pag-${id}">
+        <option value="Pix Corporativo">Pix Corporativo</option>
+        <option value="Cartão de Débito">Cartão de Débito</option>
+        <option value="Cartão de Crédito">Cartão de Crédito</option>
+        <option value="Dinheiro">Dinheiro</option>
+      </select>
+      <button class="btn btn-primary" onclick="concluirViagem('${id}')">Confirmar Pagamento e Concluir</button>
+    </div>`;
+}
+
+function concluirViagem(id){
+  const viagens=getViagens();
+  const v=viagens.find(x=>x.id===id);
+  if(!v) return;
+  v.status='CONCLUÍDA';
+  v.formaPagamento=document.getElementById('pag-'+id).value;
+  v.conclusaoISO=new Date().toISOString();
+  saveViagens(viagens);
+  enviarParaBackend(v);
+  document.querySelector('[data-tab="concluidas"]').click();
+}
+
+// ─────────────────────────────────────────────
+//  RENDER CONCLUÍDAS
+// ─────────────────────────────────────────────
+function renderConcluidas(){
+  const el=document.getElementById('tab-concluidas');
+  const lista=getViagens().filter(v=>v.status==='CONCLUÍDA');
+  if(lista.length===0){el.innerHTML='<div class="empty">Nenhuma viagem concluída ainda.</div>';return;}
+  el.innerHTML=lista.map(v=>`
+    <div class="card">
+      ${rowHTML(v.id,'<span class="stamp concluida">CONCLUÍDA</span>')}
+      ${rowHTML('Passageiro',v.passageiro)}
+      ${rowHTML('Valor','R$ '+fmtMoeda(v.valor))}
+      ${rowHTML('Pagamento',v.formaPagamento||'-')}
+      ${rowHTML('Motorista / Placa',(v.motorista||'-')+' / '+(v.placa||'-'))}
+      ${rowHTML('Concluída em',fmtData(v.conclusaoISO))}
+      <button class="btn btn-outline" onclick="gerarPdfRecibo('${v.id}')">Baixar Recibo PDF</button>
+      <button class="btn btn-wa" onclick="compartilharWhats('${v.id}')">Enviar Recibo por WhatsApp</button>
+    </div>
+  `).join('');
+}
+
+// ─────────────────────────────────────────────
+//  DASHBOARD
+// ─────────────────────────────────────────────
+function renderDash(){
+  const el=document.getElementById('tab-dash');
+  const viagens=getViagens();
+  const agora=new Date();
+  const doMes=viagens.filter(v=>{
+    if(v.status!=='CONCLUÍDA') return false;
+    const d=new Date(v.conclusaoISO);
+    return d.getMonth()===agora.getMonth()&&d.getFullYear()===agora.getFullYear();
+  });
+  const total=doMes.reduce((s,v)=>s+v.valor,0);
+  const lim=getEmpresa().limiteAlerta;
+  el.innerHTML=`
+    <div class="card" style="text-align:center;">
+      <div class="dash-label">Faturamento bruto · mês atual</div>
+      <div class="dash-num">R$ ${fmtMoeda(total)}</div>
+      <div class="dash-label" style="margin-top:6px;">${doMes.length} viagem(ns) concluída(s)</div>
+    </div>
+    ${total>lim?`<div class="card" style="border-left-color:var(--red);"><b class="sans" style="color:var(--red);">Atenção:</b> <span class="sans">faturamento do mês ultrapassou R$ ${fmtMoeda(lim)}. Revise a faixa do Simples Nacional com o contador.</span></div>`:''}
+    <button class="btn btn-primary" onclick="exportarCSV()">Exportar CSV do mês</button>
+    <div class="footer-note">${getEmpresa().razaoSocial} · CNPJ ${getEmpresa().cnpj}</div>`;
+}
+
+function exportarCSV(){
+  const agora=new Date();
+  const doMes=getViagens().filter(v=>{
+    if(v.status!=='CONCLUÍDA') return false;
+    const d=new Date(v.conclusaoISO);
+    return d.getMonth()===agora.getMonth()&&d.getFullYear()===agora.getFullYear();
+  });
+  if(doMes.length===0){alert('Nenhuma viagem concluída neste mês.');return;}
+  let csv="Data;Passageiro;CPF;Valor;Pagamento;Motorista;CPF Motorista;Placa\n";
+  doMes.forEach(v=>{
+    csv+=`${new Date(v.conclusaoISO).toLocaleDateString('pt-BR')};${v.passageiro};${v.cpf};${fmtMoeda(v.valor)};${v.formaPagamento||''};${v.motorista||''};${v.motoristaCpf||''};${v.placa||''}\n`;
+  });
+  const blob=new Blob(["\uFEFF"+csv],{type:'text/csv;charset=utf-8;'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`mconsu_${agora.getMonth()+1}_${agora.getFullYear()}.csv`;
+  a.click();
+}
+
+// ─────────────────────────────────────────────
+//  PDF — SISTEMA DE LAYOUT
+// ─────────────────────────────────────────────
+const PI=[27,31,35],PS=[91,97,104],PG=[20,50,41],PA=[185,128,46],PL=[217,212,200];
+const X0=14,X1=196,PW=182;
+
+function pdfCabecalho(doc,titulo,subtitulo){
+  const e=getEmpresa(); let y=22;
+  doc.setFont('helvetica','bold');doc.setFontSize(18);doc.setTextColor(...PG);
+  doc.text(titulo,X0,y);y+=8;
+  doc.setFont('helvetica','normal');doc.setFontSize(10);doc.setTextColor(...PS);
+  doc.text(subtitulo,X0,y);y+=9;
+  doc.setFont('helvetica','bold');doc.setFontSize(11);doc.setTextColor(...PI);
+  doc.text(e.razaoSocial,X0,y);y+=5.5;
+  doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(...PS);
+  const info=`CNPJ ${e.cnpj} · ${e.sede} · CNAE ${e.cnae}`;
+  const linhas=doc.splitTextToSize(info,PW);
+  linhas.forEach(l=>{doc.text(l,X0,y);y+=4.5;});
+  y+=2;
+  doc.setDrawColor(...PA);doc.setLineWidth(1);
+  doc.line(X0,y,X1,y);y+=10;
+  return y;
+}
+
+// Cabeçalho de seção: fundo verde + texto branco
+function pdfSecao(doc,y,texto){
+  doc.setFillColor(...PG);
+  doc.rect(X0,y,PW,7.5,'F');
+  doc.setFont('helvetica','bold');doc.setFontSize(8.5);doc.setTextColor(255,255,255);
+  doc.text(texto.toUpperCase(),X0+3,y+5.3);
+  return y+13;
+}
+
+// Campo: rótulo cinza pequeno acima, valor abaixo
+function pdfC(doc,y,rotulo,valor,w){
+  w=w||PW;
+  doc.setFont('helvetica','normal');doc.setFontSize(7.5);doc.setTextColor(...PS);
+  doc.text(rotulo.toUpperCase(),X0,y);
+  doc.setFont('helvetica','normal');doc.setFontSize(10.5);doc.setTextColor(...PI);
+  const ls=doc.splitTextToSize(String(valor||'-'),w);
+  doc.text(ls,X0,y+5.5);
+  return y+5.5+ls.length*5+4;
+}
+
+// Dois campos lado a lado
+function pdfC2(doc,y,r1,v1,r2,v2,verde2){
+  const mid=115,w1=mid-X0-6,w2=X1-mid;
+  doc.setFont('helvetica','normal');doc.setFontSize(7.5);doc.setTextColor(...PS);
+  doc.text(r1.toUpperCase(),X0,y);
+  if(r2) doc.text(r2.toUpperCase(),mid,y);
+  doc.setFont('helvetica','bold');doc.setFontSize(12);doc.setTextColor(...PI);
+  const l1=doc.splitTextToSize(String(v1||'-'),w1);
+  doc.text(l1,X0,y+6);
+  if(v2!==undefined&&v2!==null){
+    doc.setFontSize(13);doc.setTextColor(...(verde2?PG:PI));
+    const l2=doc.splitTextToSize(String(v2),w2);
+    doc.text(l2,mid,y+6);
+  }
+  return y+6+Math.max(l1.length,1)*5.5+7;
+}
+
+// Linha divisória
+function pdfDiv(doc,y){
+  doc.setDrawColor(...PL);doc.setLineWidth(0.25);
+  doc.line(X0,y,X1,y);
+  return y+7;
+}
+
+// Rodapé itálico
+function pdfRodape(doc,y,linhas){
+  doc.setFont('helvetica','italic');doc.setFontSize(7.5);doc.setTextColor(150,150,150);
+  linhas.forEach(txt=>{
+    const p=doc.splitTextToSize(txt,PW);
+    doc.text(p,X0,y);y+=p.length*4+3;
+  });
+}
+
+// Bloco de trajeto com paradas e horários
+function pdfTrajeto(doc,y,v){
+  y=pdfC(doc,y,'Origem',v.origem);
+  if(v.paradas&&v.paradas.length){
+    v.paradas.forEach((p,i)=>{y=pdfC(doc,y,`Parada ${i+1}`,p);});
+  }
+  y=pdfC(doc,y,'Destino',v.destino);
+  if(v.embarque||v.desembarque){
+    y=pdfDiv(doc,y);
+    if(v.embarque&&v.desembarque){
+      y=pdfC2(doc,y,'Embarque previsto',fmtHorario(v.embarque),'Desembarque previsto',fmtHorario(v.desembarque));
+    } else if(v.embarque){
+      y=pdfC(doc,y,'Embarque previsto',fmtHorario(v.embarque));
+    } else {
+      y=pdfC(doc,y,'Desembarque previsto',fmtHorario(v.desembarque));
+    }
+  }
+  return y;
+}
+
+// ─────────────────────────────────────────────
+//  PDF — ORDEM DE SERVIÇO
+// ─────────────────────────────────────────────
+function gerarPdfOS(id){
+  const v=getViagens().find(x=>x.id===id);
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF();
+  let y=pdfCabecalho(doc,'ORDEM DE SERVIÇO','Transporte Privado de Passageiros');
+
+  y=pdfC2(doc,y,'Ordem de Serviço Nº',v.id,'Status',v.status,v.status==='CONCLUÍDA');
+  y=pdfC(doc,y,'Data de Abertura',fmtData(v.aberturaISO));
+  y=pdfDiv(doc,y);
+
+  y=pdfC2(doc,y,'Valor Acordado','R$ '+fmtMoeda(v.valor),null,null,true);
+  y=pdfDiv(doc,y);
+
+  y=pdfSecao(doc,y,'Passageiro');
+  y=pdfC2(doc,y,'Nome',v.passageiro,'CPF',v.cpf);
+  y=pdfDiv(doc,y);
+
+  y=pdfSecao(doc,y,'Trajeto');
+  y=pdfTrajeto(doc,y,v);
+  y=pdfDiv(doc,y);
+
+  y=pdfSecao(doc,y,'Veículo e Motorista');
+  y=pdfC2(doc,y,'Motorista',v.motorista,'CPF do Motorista',v.motoristaCpf||'-');
+  y=pdfC(doc,y,'Placa do Veículo',v.placa);
+  y+=4;
+
+  pdfRodape(doc,y,[
+    'Documento gerado eletronicamente para fins de comprovação de prestação de serviço de transporte privado contratado.'
+  ]);
+  doc.save(`${v.id}_OS.pdf`);
+}
+
+// ─────────────────────────────────────────────
+//  PDF — RECIBO DE PAGAMENTO
+// ─────────────────────────────────────────────
+function gerarPdfRecibo(id){
+  const v=getViagens().find(x=>x.id===id);
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF();
+  let y=pdfCabecalho(doc,'RECIBO DE PAGAMENTO','Transporte Privado de Passageiros');
+
+  y=pdfC2(doc,y,'Ordem de Serviço Nº',v.id,'Valor Recebido','R$ '+fmtMoeda(v.valor),true);
+  y=pdfC(doc,y,'Forma de Pagamento',v.formaPagamento);
+  y=pdfDiv(doc,y);
+
+  y=pdfSecao(doc,y,'Passageiro');
+  y=pdfC2(doc,y,'Nome',v.passageiro,'CPF',v.cpf);
+  y=pdfDiv(doc,y);
+
+  y=pdfSecao(doc,y,'Trajeto');
+  y=pdfTrajeto(doc,y,v);
+  y=pdfDiv(doc,y);
+
+  y=pdfSecao(doc,y,'Veículo e Motorista');
+  y=pdfC2(doc,y,'Motorista',v.motorista,'CPF do Motorista',v.motoristaCpf||'-');
+  y=pdfC(doc,y,'Placa do Veículo',v.placa);
+  y=pdfDiv(doc,y);
+
+  y=pdfC(doc,y,'Data de Conclusão',fmtData(v.conclusaoISO));
+  y+=6;
+
+  pdfRodape(doc,y,[
+    'Documento gerado e assinado eletronicamente, sem necessidade de assinatura manuscrita, nos termos da legislação aplicável a documentos eletrônicos.',
+    'Recibo emitido eletronicamente para fins de comprovação de pagamento. NFS-e correspondente será emitida junto à Prefeitura de Betim conforme regime de competência mensal.'
+  ]);
+  doc.save(`${v.id}_Recibo.pdf`);
+}
+
+// ─────────────────────────────────────────────
+//  WHATSAPP
+// ─────────────────────────────────────────────
+function compartilharWhats(id){
+  const v=getViagens().find(x=>x.id===id);
+  const paradas=v.paradas&&v.paradas.length
+    ?'\n'+v.paradas.map((p,i)=>`Parada ${i+1}: ${p}`).join('\n'):'';
+  const horarios=(v.embarque?`\nEmbarque previsto: ${fmtHorario(v.embarque)}`:'')
+    +(v.desembarque?`\nDesembarque previsto: ${fmtHorario(v.desembarque)}`:'');
+  const txt=`*RECIBO DE PAGAMENTO - MCONSU*\n\n`+
+    `OS: ${v.id}\n`+
+    `Passageiro: ${v.passageiro}\n`+
+    `Origem: ${v.origem}${paradas}\nDestino: ${v.destino}${horarios}\n`+
+    `Valor: R$ ${fmtMoeda(v.valor)}\nPagamento: ${v.formaPagamento}\n`+
+    `Motorista: ${v.motorista||'-'} | Placa: ${v.placa||'-'}\n`+
+    `Concluído em: ${fmtData(v.conclusaoISO)}\n\n`+
+    `${getEmpresa().razaoSocial} · CNPJ ${getEmpresa().cnpj}`;
+  window.open(`https://wa.me/?text=${encodeURIComponent(txt)}`,'_blank');
+}
+
+// ─────────────────────────────────────────────
+//  INIT
+// ─────────────────────────────────────────────
+render();
+atualizarHeaderEmpresa();
+popularSelectMotoristas();
+
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  });
+}
+</script>
+</body>
+</html>
